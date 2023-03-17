@@ -1,8 +1,9 @@
 import pandas as pd
 import os
 
-# Enter path to the data_fusion_guest_lecture file
-image_folder_path = "data_fusion_guest_lecture"
+# Enter path to the data file
+head, tail = os.path.split(os.getcwd())
+image_folder_path = os.path.join(head, "data")
 
 # Loads labels
 df = pd.read_csv(os.path.join(image_folder_path, "seedling_labels.csv"))
