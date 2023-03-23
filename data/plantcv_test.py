@@ -13,7 +13,7 @@ from scipy import ndimage
 
 
 
-#Not working yet
+
 def run_single_rgb(img, with_images = False):
     s = pcv.rgb2gray_hsv(rgb_img=img, channel='s') #get the saturation value of the image
     v = pcv.rgb2gray_hsv(rgb_img=img, channel='v') #get the value value of the image
@@ -24,28 +24,6 @@ def run_single_rgb(img, with_images = False):
     s_d = pcv.dilate(s_e, 3, 10)
 
     s_last = s_d
-
-    # transform image to binary, saturation values above threshold are 1 and lesss are 0
-    v_binary = pcv.threshold.binary(gray_img=v, threshold=75, max_value=255, object_type='dark')
-    v_e = pcv.erode(v_binary, 3,8)
-    v_d = pcv.dilate(v_e, 3, 10)
-
-    v_last = v_d
-
-    #get red chanel for extra layer
-    r = img[:,:,0]
-    r_binary = pcv.threshold.binary(gray_img=r, threshold=100, max_value=255, object_type='light')
-    #get green chanel for extra layer
-    g = img[:,:,1]
-    g_binary = pcv.threshold.binary(gray_img=g, threshold=100, max_value=255, object_type='light')
-    #get blue chanel for extra layer
-    b = img[:,:,2]
-    b_binary = pcv.threshold.binary(gray_img=b, threshold=100, max_value=255, object_type='light')
-
-    g_minus_r_b = g - r -b
-    g_minus_r_b[g_minus_r_b < 0] = 0
-    b_g = np.add(b, g) /2
-
 
     #Find the region of interest ROI
     roi_cm = ndimage.center_of_mass(s_last)
@@ -64,48 +42,50 @@ def run_single_rgb(img, with_images = False):
                                                                    obj_hierarchy=obj_hierarchy,
                                                                    roi_type='partial')
     obj, mask = pcv.object_composition(img=img, contours=roi_objects, hierarchy=hierarchy)
-    analysis_image = pcv.analyze_object(img=img, obj=obj, mask=mask, label="default")
-
+    try:
+        analysis_image = pcv.analyze_object(img=img, obj=obj, mask=mask, label="default")
+    except TypeError: #sometimes object returns nothing and len of nonetype gives TypeError
+        analysis_image = img
 
     if with_images:
-        # fig, ax =plt.subplots(2,6)
-        # ax[0][0].imshow(img)
-        # ax[0][0].title.set_text("original")
-        # ax[0][1].imshow(b, cmap="Blues")
-        # ax[0][1].title.set_text("b")
-        # ax[0][2].imshow(r, cmap="Reds")
-        # ax[0][2].title.set_text("r")
-        # ax[0][3].imshow(g, cmap="Greens")
-        # ax[0][3].title.set_text("g")
-        # ax[0][4].imshow(s, cmap="gray")
-        # ax[0][4].title.set_text("s")
-        # ax[0][5].imshow(v, cmap="gray")
-        # ax[0][5].title.set_text("v")
-        #
-        # ax[1][0].imshow(b_g, cmap="gray")
-        # ax[1][0].title.set_text("b_g")
-        # ax[1][1].imshow(b_binary, cmap="gray")
-        # ax[1][1].title.set_text("b_binary")
-        # ax[1][2].imshow(r_binary, cmap="gray")
-        # ax[1][2].title.set_text("r_binary")
-        # ax[1][3].imshow(g_binary, cmap="gray")
-        # ax[1][3].title.set_text("g_binary")
-        # ax[1][4].imshow(s_last, cmap="gray")
-        # ax[1][4].title.set_text("s_last")
-        # ax[1][5].imshow(v_last, cmap="gray")
-        # ax[1][5].title.set_text("v_last")
-        #
-        # plt.show()
-
         fig, ax = plt.subplots(1,2)
         ax[0].imshow(s_last, cmap="gray")
         ax[1].imshow(analysis_image)
         plt.show()
+    try:
+        highest_x = np.amax(obj[:,:,0])
+        highest_y = np.amax(obj[:,:,1])
+        lowest_x = np.amin(obj[:,:,0])
+        lowest_y = np.amin(obj[:,:,1])
+    except TypeError: #sometimes object returns nothing and nonetype is not subscriptable TypeError
+        highest_x = 0
+        highest_y = 0
+        lowest_x = 0
+        lowest_y = 0
+        w = s_last.shape[0]
+        for i in range(w):
+            pixel_n = np.sum(s_last[i,:])
+            if not pixel_n == 0:
+                highest_x = i
+                break
+        for i in range(w):
+            pixel_n = np.sum(s_last[(w-i-1),:])
+            if not pixel_n == 0:
+                lowest_x = (w-i)
+                break
+        h = s_last.shape[1]
+        for i in range(w):
+            pixel_n = np.sum(s_last[:,i])
+            if not pixel_n == 0:
+                highest_y = i
+                break
+        for i in range(w):
+            pixel_n = np.sum(s_last[:,(h-i-1)])
+            if not pixel_n == 0:
+                lowest_y = (w-i)
+                break
 
-    highest_x = np.amax(obj[:,:,0])
-    highest_y = np.amax(obj[:,:,1])
-    lowest_x = np.amin(obj[:,:,0])
-    lowest_y = np.amin(obj[:,:,1])
+
 
     plant_width = highest_x - lowest_x
     plant_height = highest_y - lowest_y
@@ -239,11 +219,8 @@ def main():
     pw_top = [] #and from the top rgb immages
     ph_top =[]
     pa_top = []
-    correct_a_s, correct_h_s, correct_w_s = 0, 0, 0
-    correct_a_t, correct_h_t, correct_w_t = 0, 0, 0
+
     for idx, row in df.iterrows():
-
-
         img_side = (plt.imread(row["side_cam_path"], format="png") * 255).astype(np.uint8)
         img_top = (plt.imread(row["color_cam_path"], format="png") * 255).astype(np.uint8)
 
@@ -260,45 +237,6 @@ def main():
         ph_side.append(plant_height_s)
         pa_side.append(plant_area_s)
 
-        print(f"idx:{idx} Ex Opinion:{row['expert_binary']} pa:{plant_area_t} ph:{plant_height_t} pw:{plant_width_t}")
-        print(f"idx:{idx} Ex Opinion:{row['expert_binary']} pa:{plant_area_s} ph:{plant_height_s} pw:{plant_width_s}")
-        if pa_side[-1] > 15000 and row['expert_binary'] == 1:
-            correct_a_s += 1
-        elif pa_side[-1] <= 15000 and row['expert_binary'] == 0:
-            correct_a_s += 1
-
-        if pw_side[-1] > 350 and row['expert_binary'] == 1:
-            correct_w_s += 1
-        elif pw_side[-1] <= 350 and row['expert_binary'] == 0:
-            correct_w_s += 1
-
-        if ph_side[-1] > 350 and row['expert_binary'] == 1:
-            correct_h_s += 1
-        elif ph_side[-1] <= 350 and row['expert_binary'] == 0:
-            correct_h_s += 1
-
-        if pa_top[-1] > 40000 and row['expert_binary'] == 1:
-            correct_a_t += 1
-        elif pa_top[-1] <= 15000 and row['expert_binary'] == 0:
-            correct_a_t += 1
-
-        if pw_top[-1] > 500 and row['expert_binary'] == 1:
-            correct_w_t += 1
-        elif pw_top[-1] <= 500 and row['expert_binary'] == 0:
-            correct_w_t += 1
-
-        if ph_top[-1] > 500 and row['expert_binary'] == 1:
-            correct_h_t += 1
-        elif ph_top[-1] <= 500 and row['expert_binary'] == 0:
-            correct_h_t += 1
-
-        if idx % 100 == 99:
-            print(f"Accuracy Area side: {correct_a_s / idx}")
-            print(f"Accuracy Width side: {correct_w_s / idx}")
-            print(f"Accuracy Height side: {correct_h_s / idx}")
-            print(f"Accuracy Area top: {correct_a_t / idx}")
-            print(f"Accuracy Width top: {correct_w_t / idx}")
-            print(f"Accuracy Height top: {correct_h_t / idx}")
 
 
 
@@ -310,15 +248,7 @@ def main():
     df["plant_height_top_view"] = ph_top
     df["plant_area_top_view"] = pa_top
 
-    print(f"Accuracy Area side: {correct_a_s / idx}")
-    print(f"Accuracy Width side: {correct_w_s / idx}")
-    print(f"Accuracy Height side: {correct_h_s / idx}")
-    print(f"Accuracy Area top: {correct_a_t / idx}")
-    print(f"Accuracy Width top: {correct_w_t / idx}")
-    print(f"Accuracy Height top: {correct_h_t / idx}")
-
-
-    df.to_csv("with_side_view_features.csv")
+    df.to_csv("seedling_labels_with_features.csv", index=False)
 
 if __name__ == "__main__":
     main()
