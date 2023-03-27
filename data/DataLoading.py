@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import re
 import numpy as np
 
 def get_df(filepath :str = "seedling_labels.csv"):
@@ -38,8 +39,10 @@ def get_df(filepath :str = "seedling_labels.csv"):
             exp_binary.append(np.NaN)
     df["binary_expert"] = exp_binary
     df = df.dropna()
+
+    # df.to_csv("seedling_labels_with_features.csv", index=False)
     return df
 
 
 if __name__ == "__main__":
-    df = get_df()
+    df = get_df("seedling_labels_with_features.csv")

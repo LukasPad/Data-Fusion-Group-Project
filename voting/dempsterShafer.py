@@ -1,9 +1,6 @@
-import argparse
-import operator
-from pathlib import Path
-import ast
 from data.DataLoading import get_df
-import pandas as pd
+import numpy as np
+
 
 def get_beliefs(model_conditional_probabilities, model_results):
     """
@@ -38,7 +35,7 @@ def get_beliefs(model_conditional_probabilities, model_results):
 
 
 def main():
-    df = get_df("../data/seedling_labels_with_features_and_predictions.csv")
+    df = get_df("../data/seedling_labels_with_features.csv")
     mass = {}
 
     model_conditional_probabilities = [[0.881, 0.962],
@@ -244,6 +241,7 @@ def main():
        [1, 1, 0, 1],
        [1, 1, 1, 1],
        [1, 1, 1, 1]]
+    model_results = np.genfromtxt("models_predictions.csv", delimiter=',').astype(int)
 
     true_results = [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0,
        0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1,
@@ -255,6 +253,7 @@ def main():
        1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1,
        0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1,
        1]
+    true_results = np.genfromtxt("true_answer.csv", delimiter=',').astype(int)
 
     beliefs = get_beliefs(model_conditional_probabilities, model_results)
     belies_plausibility = [[belief[0],belief[1],belief[2], (belief[0]+belief[2]), (belief[1]+belief[2]) ] for belief in beliefs]
