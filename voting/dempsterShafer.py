@@ -261,8 +261,8 @@ def main():
 
     belief_binary = []
     for idx, result in enumerate(true_results):
-        print(f"The expert opinion is: {result}, the delta (belief <-> plausibility) is: {belies_plausibility[idx][0]:.3f} <-> {belies_plausibility[idx][3]:.3f}, {belies_plausibility[idx][1]:.3f} <-> {belies_plausibility[idx][4]:.3f}")
-        print(f"The models return: {model_results[idx][0]}, {model_results[idx][1]}, {model_results[idx][2]}, {model_results[idx][3]}")
+        print(f"The models return: {model_results[idx][0]}, {model_results[idx][1]}, {model_results[idx][2]}, {model_results[idx][3]}                                     Belief 0 Plausib. 0    Belief 1 Plausib. 1")
+        print(f"The expert opinion is: {result}, the delta (belief <-> plausibility) is: {belies_plausibility[idx][0]:.3f} <-> {belies_plausibility[idx][3]:.3f},       {belies_plausibility[idx][1]:.3f} <-> {belies_plausibility[idx][4]:.3f}")
         if beliefs[idx][1] > 0.5:
             belief_binary.append(1)
         else:
@@ -285,7 +285,7 @@ def main():
     print(f"Model 2 has an accuracy of: {correct[1]/len(true_results):.3f}")
     print(f"Model 3 has an accuracy of: {correct[2]/len(true_results):.3f}")
     print(f"Model 4 has an accuracy of: {correct[3]/len(true_results):.3f}")
-    print(f"Voting has an accuracy of: {correct[4]/len(true_results):.3f}")
+    print(f"Dempster-Shafer voting has an accuracy of: {correct[4]/len(true_results):.3f}")
 
 
 if __name__ == "__main__":
